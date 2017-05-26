@@ -4,7 +4,7 @@ var supertest = require('supertest');
 var async = require('async');
 
 module.exports = {
-  run: function(conf, app, url, callback) {
+  run: function (conf, app, url, callback) {
     var server;
     var agent = supertest.agent(url);
     var baseURL = '/';
@@ -14,17 +14,17 @@ module.exports = {
     }
 
     if (app) {
-      before(function(done) {
+      before(function (done) {
         server = app.listen(done);
       });
 
-      after(function(done) {
+      after(function (done) {
         server.close(done);
       });
     }
 
-    describe('Loopback API', function() {
-      async.each(conf, function(c, asyncCallback) {
+    describe('Loopback API', function () {
+      async.each(conf, function (c, asyncCallback) {
         if (!c.hasOwnProperty('method')) {
           callback('Test has no method specified');
           return asyncCallback();
@@ -44,51 +44,51 @@ module.exports = {
         var isWithAuthentication = (c.hasOwnProperty('username') && c.hasOwnProperty('password'));
         var authenticationDescription = (isWithAuthentication) ? 'authenticated' : 'unauthenticated';
 
-        var description = 'should respond '+c.expect+' on '+authenticationDescription+' '+c.method+' requests to /'+c.model;
+        var description = 'should respond ' + c.expect + ' on ' + authenticationDescription + ' ' + c.method + ' requests to /' + c.model;
         var parsedMethod;
         var loginBlock;
 
         if (c.method.toUpperCase() === 'GET') {
-          parsedMethod = agent.get(baseURL+c.model);
+          parsedMethod = agent.get(baseURL + c.model);
         } else if (c.method.toUpperCase() === 'POST') {
-          parsedMethod = agent.post(baseURL+c.model);
+          parsedMethod = agent.post(baseURL + c.model);
         } else if (c.method.toUpperCase() === 'PUT') {
-          parsedMethod = agent.put(baseURL+c.model);
+          parsedMethod = agent.put(baseURL + c.model);
         } else if (c.method.toUpperCase() === 'DELETE') {
-          parsedMethod = agent.delete(baseURL+c.model);
+          parsedMethod = agent.delete(baseURL + c.model);
         } else if (c.method.toUpperCase() === 'PATCH') {
-          parsedMethod = agent.patch(baseURL+c.model);
+          parsedMethod = agent.patch(baseURL + c.model);
         } else {
           callback('Test has an unrecognized method type');
           return asyncCallback();
         }
 
         if (isWithAuthentication) {
-          loginBlock = function(loginCallback) {
+          loginBlock = function (loginCallback) {
             agent
-            .post(baseURL+'AlbionUsers/login')
-            .send({ email: c.username, password: c.password, ttl: '1209600000' })
-            .set('Accept', 'application/json')
-            .set('Content-Type', 'application/json')
-            .expect(200)
-            .end(function(err, authRes) {
-              if (err) {
-                return loginCallback('Could not log in with provided credentials', null);
-              }
+              .post(baseURL + 'AlbionUsers/login')
+              .send({email: c.username, password: c.password, ttl: '1209600000'})
+              .set('Accept', 'application/json')
+              .set('Content-Type', 'application/json')
+              .expect(200)
+              .end(function (err, authRes) {
+                if (err) {
+                  return loginCallback('Could not log in with provided credentials', null);
+                }
 
-              var token = authRes.body.id;
+                var token = authRes.body.id;
 
-              return loginCallback(null, token);
-            });
+                return loginCallback(null, token);
+              });
           }
         } else {
-          loginBlock = function(loginCallback) { 
-            return loginCallback(null, null); 
+          loginBlock = function (loginCallback) {
+            return loginCallback(null, null);
           };
         }
 
-        it(description, function(done) {
-          loginBlock(function(loginError, loginToken) {
+        it(description, function (done) {
+          loginBlock(function (loginError, loginToken) {
             if (loginError) {
               done(loginError);
               return asyncCallback();
@@ -100,12 +100,34 @@ module.exports = {
 
             if (hasData) {
               parsedMethod = parsedMethod.send(c.withData)
-              .set('Content-Type', 'application/json');
+                .set('Content-Type', 'application/json');
+            }
+            if (c.valueOnly) {
+              parsedMethod = parsedMethod.expect(function (res) {
+                for (var k in res.body) {
+                  if (c.valueOnly.indexOf(k) === -1) {
+                    delete res.body[k]
+                  }
+                }
+
+              })
             }
 
-            parsedMethod
-            .expect(c.expect)
-            .end(function(err, res) {
+            if (c.valueExcept) {
+              parsedMethod = parsedMethod.expect(function (res) {
+                for (var i in c.valueExcept) {
+                  delete res.body[c.valueExcept[i]]
+                }
+              })
+            }
+
+            if (c.expectValue) {
+              parsedMethod = parsedMethod.expect(c.expect, c.expectValue)
+            } else {
+              parsedMethod = parsedMethod.expect(c.expect)
+            }
+
+            parsedMethod.end(function (err, res) {
               if (err) {
                 done(err);
                 return asyncCallback();
