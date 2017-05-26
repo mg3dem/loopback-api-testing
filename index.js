@@ -66,7 +66,7 @@ module.exports = {
         if (isWithAuthentication) {
           loginBlock = function(loginCallback) {
             agent
-            .post(baseURL+'users/login')
+            .post(baseURL+'AlbionUsers/login')
             .send({ email: c.username, password: c.password, ttl: '1209600000' })
             .set('Accept', 'application/json')
             .set('Content-Type', 'application/json')
