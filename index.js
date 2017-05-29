@@ -88,6 +88,10 @@ module.exports = {
         }
 
         it(description, function (done) {
+          if(c.skip) {
+            this.skip()
+          }
+
           loginBlock(function (loginError, loginToken) {
             if (loginError) {
               done(loginError);
