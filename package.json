@@ -14,9 +14,10 @@
     "loopbackjs"
   ],
   "dependencies": {
-    "supertest": "^1.0.1",
+    "async": "latest",
+    "lodash": "^4.17.4",
     "mocha": "^2.2.5",
-    "async": "latest"
+    "supertest": "^1.0.1"
   },
   "author": "Jordan Ubbens",
   "license": "MIT",

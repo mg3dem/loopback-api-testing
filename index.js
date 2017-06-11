@@ -2,6 +2,7 @@
 
 var supertest = require('supertest');
 var async = require('async');
+var get = require('lodash/get');
 
 module.exports = {
   run: function (conf, app, url, callback) {
@@ -119,9 +120,19 @@ module.exports = {
 
             if (c.valueExcept) {
               parsedMethod = parsedMethod.expect(function (res) {
-                for (var i in c.valueExcept) {
-                  delete res.body[c.valueExcept[i]]
+                var results = [];
+                if(!(res.body instanceof Array)){
+                  results.push(res.body)
+                } else {
+                  results = res.body
                 }
+
+                for(var result in results) {
+                  for (var key in c.valueExcept) {
+                    delete results[result][c.valueExcept[key]]
+                  }
+                }
+
               })
             }
 
